@@ -20,7 +20,7 @@ class Admin
             return redirect()->route('login');
         }
 
-        $userRoles =auth()->user()->roles->pluck('name');
+        $userRoles = Auth::user()->roles->pluck('name');
 
         if (in_array(['Admin', 'Staf'], $userRoles)) {
             return $next($request);
