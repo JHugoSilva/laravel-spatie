@@ -18,9 +18,8 @@ class UserApiController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        //return response()->json(['status' => true, 'result' => UserResource::collection($users), 'message' => 'Get Data Success']);
-        return $this->sendResponse($users, "Get Data Success");
+        $users = User::paginate(3);
+        return $this->sendResponse( UserResource::collection($users)->resource, 'Get Data Success');
     }
 
     /**
@@ -45,8 +44,6 @@ class UserApiController extends Controller
             'photo_profile' => $imageName,
         ]);
 
-        //return response()->json(['status' => true, 'result' =>new UserResource($user), 'message' => 'User created!']);
-
         return $this->sendResponse(new UserResource($user), 'Save Data Success');
     }
 
@@ -64,10 +61,6 @@ class UserApiController extends Controller
      */
     public function update(StoreUserRequest $request, User $user)
     {
-        // $request->validate([
-        //     'name' => 'required|min:3',
-        //     'email' => 'required|unique:users,email,'.$user->id,
-        // ]);
         $request->validated();
         $imageName = null;
 
@@ -76,7 +69,7 @@ class UserApiController extends Controller
             $imageName = time() . '.' . $request->file('photo')->extension();
             $request->file('photo')->storeAs('users', $imageName, 'public');
 
-            $path = storage_path('app/public/users/' . $user->icon);
+            $path = storage_path('app/public/users/' . $user->photo_profile);
 
             if (File::exists($path)) {
                 File::delete($path);
@@ -95,7 +88,6 @@ class UserApiController extends Controller
         $user->address = $request->address;
         $user->update();
         return $this->sendResponse(new UserResource($user), 'Update Data Success');
-       // return response()->json(['status' => true, 'result' =>new UserResource($user), 'message' => 'User updated!']);
     }
 
     /**
@@ -105,6 +97,11 @@ class UserApiController extends Controller
     {
         try {
             $user->deleteOrFail();
+            $path = storage_path('app/public/users/' . $user->photo_profile);
+
+            if (File::exists($path)) {
+                File::delete($path);
+            }
             return response()->noContent();
         } catch (Exception $e) {
             return $this->sendError('Error Delete', $e->getMessage(), 500);
